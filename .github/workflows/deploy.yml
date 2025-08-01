@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: production 
 
     steps:
@@ -17,21 +17,11 @@ jobs:
     - name: Build Docker image
       run: docker build -t wizard-svc:latest .
 
-    - name: Tag Docker image
-      run: docker tag wizard-svc:latest ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+    - name: Stop and remove old container
+      run: |
+        docker stop wizard-svc || true
+        docker rm wizard-svc || true
 
-    - name: Push Docker image
-      run: docker push ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
-
-    - name: Deploy on Unraid via SSH
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.UNRAID_HOST }}
-        username: ${{ secrets.UNRAID_USER }}
-        key: ${{ secrets.UNRAID_SSH_KEY }}
-        timeout: 1200s
-        script: |
-          docker pull ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
-          docker stop wizard-svc || true
-          docker rm wizard-svc || true
-          docker run -d --restart unless-stopped --name wizard-svc -p 8080:80 ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+    - name: Run new container
+      run: |
+        docker run -d --restart unless-stopped --name wizard-svc -p 8080:80 wizard-svc
