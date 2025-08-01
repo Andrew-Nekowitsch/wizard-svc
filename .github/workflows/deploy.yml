@@ -24,4 +24,4 @@ jobs:
 
     - name: Run new container
       run: |
-        docker run -d --restart unless-stopped --name wizard-svc -p 8080:80 wizard-svc
+        docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 wizard-svc

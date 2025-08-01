@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=build /app/out .
 
 # Set environment variables if needed
-ENV ASPNETCORE_URLS=http://+:80
-EXPOSE 80
+ENV ASPNETCORE_URLS=http://+:5175
+EXPOSE 5175
 
 ENTRYPOINT ["dotnet", "wizard-svc.dll"]
