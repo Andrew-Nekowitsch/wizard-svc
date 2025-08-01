@@ -1,0 +1,36 @@
+name: Deploy to Unraid
+
+on:
+  push:
+    branches:
+      - main  # Change this to your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    - name: Build Docker image
+      run: docker build -t wizard-svc:latest .
+
+    - name: Push Docker image
+      run: docker tag wizard-svc:latest ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+      run: docker push ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+
+    - name: Deploy on Unraid via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.UNRAID_HOST }}
+        username: ${{ secrets.UNRAID_USER }}
+        key: ${{ secrets.UNRAID_SSH_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+          docker stop wizard-svc || true
+          docker rm wizard-svc || true
+          docker run -d --name wizard-svc -p 8080:80 ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
