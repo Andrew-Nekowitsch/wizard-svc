@@ -19,8 +19,10 @@ jobs:
     - name: Build Docker image
       run: docker build -t wizard-svc:latest .
 
-    - name: Push Docker image
+    - name: Tag Docker image
       run: docker tag wizard-svc:latest ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
+
+    - name: Push Docker image
       run: docker push ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
 
     - name: Deploy on Unraid via SSH
