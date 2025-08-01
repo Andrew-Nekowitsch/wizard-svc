@@ -29,7 +29,7 @@ jobs:
         host: ${{ secrets.UNRAID_HOST }}
         username: ${{ secrets.UNRAID_USER }}
         key: ${{ secrets.UNRAID_SSH_KEY }}
-        timeout: 600
+        timeout: 600s
         script: |
           docker pull ${{ secrets.DOCKER_REGISTRY }}/wizard-svc:latest
           docker stop wizard-svc || true
