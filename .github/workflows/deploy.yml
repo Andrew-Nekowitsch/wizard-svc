@@ -26,18 +26,10 @@ jobs:
           docker stop wizard-svc || true
           docker rm wizard-svc || true
 
-      - name: Print environment variables
+      - name: Debug secret values
         run: |
-          echo "JWT_SECRET: $JWT_SECRET"
-          echo "DATABASE_CONNECTION_STRING: $DATABASE_CONNECTION_STRING"
-
-      - name: Check JWT_SECRET
-        run: |
-          if [ -z "$JWT_SECRET" ]; then
-            echo "JWT_SECRET is missing"
-          else
-            echo "JWT_SECRET is set"
-          fi
+          echo "JWT_SECRET='$JWT_SECRET'"
+          echo "DATABASE_CONNECTION_STRING='$DATABASE_CONNECTION_STRING'"
 
       - name: Run new container
         run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 -e JWT_SECRET=$JWT_SECRET -e DATABASE_CONNECTION_STRING=$DATABASE_CONNECTION_STRING wizard-svc
