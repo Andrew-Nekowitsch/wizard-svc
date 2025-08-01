@@ -29,7 +29,19 @@ public static class ProgramExtensions
         builder.Services.AddScoped<IAuthCommands, AuthCommands>();
 
 
-        var connectionString = builder.Configuration["DATABASE_CONNECTION_STRING"];
+        var connectionString = string.Empty;
+        var dbUser = builder.Configuration["DB_USER"];
+        var dbPassword = builder.Configuration["DB_PASSWORD"];
+        var dbServer = builder.Configuration["DB_SERVER"];
+
+        if (!string.IsNullOrEmpty(dbUser) && !string.IsNullOrEmpty(dbPassword) && !string.IsNullOrEmpty(dbServer))
+        {
+            connectionString = $"Server={dbServer};Database=wizards;User Id={dbUser};Password={dbPassword};TrustServerCertificate=True;Connection Timeout=30;";
+        }
+        else
+        {
+            throw new InvalidOperationException("Database connection string parameters are not configured properly. Please set DB_USER, DB_PASSWORD, and DB_SERVER in your environment variables or configuration.");
+        }
 
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(connectionString));
