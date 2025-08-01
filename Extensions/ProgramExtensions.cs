@@ -29,10 +29,7 @@ public static class ProgramExtensions
         builder.Services.AddScoped<IAuthCommands, AuthCommands>();
 
 
-        var connectionString =
-            builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException(
-                    "Connection string not found.");
+        var connectionString = builder.Configuration["DATABASE_CONNECTION_STRING"];
 
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(connectionString));
@@ -44,8 +41,10 @@ public static class ProgramExtensions
 
         builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
         var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
-        if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Secret))
+        var secret = builder.Configuration["JWT_SECRET"];
+        if (jwtSettings == null || string.IsNullOrEmpty(secret))
             throw new InvalidOperationException("JWT settings or secret is not configured.");
+        jwtSettings.Secret = secret;
 
         builder.Services.AddAuthentication(options =>
         {
