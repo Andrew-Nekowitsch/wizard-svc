@@ -11,7 +11,7 @@ jobs:
     environment: production
 
     env:
-      JWT_SECRET: ${{ secrets.MY_SECRET_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
       DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
 
     steps:
