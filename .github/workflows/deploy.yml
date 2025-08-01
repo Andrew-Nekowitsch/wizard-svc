@@ -26,6 +26,11 @@ jobs:
           docker stop wizard-svc || true
           docker rm wizard-svc || true
 
+      - name: Print environment variables
+        run: |
+          echo "JWT_SECRET: $JWT_SECRET"
+          echo "DATABASE_CONNECTION_STRING: $DATABASE_CONNECTION_STRING"
+
       - name: Run new container
         run: |
           docker run -d \
