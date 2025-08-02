@@ -28,8 +28,6 @@ public static class ProgramExtensions
         builder.Services.AddScoped<IAuthQueries, AuthQueries>();
         builder.Services.AddScoped<IAuthCommands, AuthCommands>();
 
-//test
-
         var connectionString = string.Empty;
         var dbUser = builder.Configuration["DB_USER"];
         var dbPassword = builder.Configuration["DB_PASSWORD"];
