@@ -3,7 +3,7 @@ name: Deploy to Unraid
 on:
   push:
     branches:
-      - main # Change this to your deployment branch
+      - main
 
 jobs:
   deploy:
@@ -25,11 +25,6 @@ jobs:
         run: |
           docker stop wizard-svc || true
           docker rm wizard-svc || true
-
-      - name: Debug secret values
-        run: |
-          echo "JWT_SECRET='$JWT_SECRET'"
-          echo "DATABASE_CONNECTION_STRING='$DATABASE_CONNECTION_STRING'"
 
       - name: Run new container
         run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 -e JWT_SECRET=$JWT_SECRET -e DATABASE_CONNECTION_STRING=$DATABASE_CONNECTION_STRING wizard-svc
