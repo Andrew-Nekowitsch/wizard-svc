@@ -31,10 +31,10 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
 
             var claims = new[]
             {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(JwtRegisteredClaimNames.UniqueName, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
+                new Claim(JwtRegisteredClaimNames.Sub, userId),
+                new Claim(JwtRegisteredClaimNames.UniqueName, username),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

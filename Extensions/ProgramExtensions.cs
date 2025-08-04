@@ -49,13 +49,20 @@ public static class ProgramExtensions
 
     public static WebApplicationBuilder AddWizardIdlerAuth(this WebApplicationBuilder builder)
     {
-
-        builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
         var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
         var secret = builder.Configuration["JWT_SECRET"];
         if (jwtSettings == null || string.IsNullOrEmpty(secret))
             throw new InvalidOperationException("JWT settings or secret is not configured.");
         jwtSettings.Secret = secret;
+            
+        builder.Services.Configure<JwtSettings>(options =>
+        {
+            options.Issuer = jwtSettings.Issuer;
+            options.Audience = jwtSettings.Audience;
+            options.Secret = jwtSettings.Secret;
+            options.AccessTokenExpirationMinutes = jwtSettings.AccessTokenExpirationMinutes;
+            options.RefreshTokenExpirationDays = jwtSettings.RefreshTokenExpirationDays;
+        });
 
         builder.Services.AddAuthentication(options =>
         {
@@ -79,7 +86,7 @@ public static class ProgramExtensions
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend",
-                policy => policy.WithOrigins("http://localhost:5173")
+                policy => policy.WithOrigins(builder.Configuration["UI_URL"] ?? "http://localhost:5174")
                                 .AllowAnyHeader()
                                 .AllowAnyMethod());
         });
