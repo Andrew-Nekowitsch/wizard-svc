@@ -49,7 +49,7 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return string.Empty;
         }
@@ -78,6 +78,6 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
     {
         // This method should retrieve the refresh token from the database
         // For now, we return a placeholder message
-        return await authQueries.GetTokenAsync(new RefreshToken { Token = "token" }); // Replace with actual userId retrieval logic
+        return await authQueries.GetTokenAsync(new RefreshToken { UserId = "userId", Token = token }); // Replace with actual userId retrieval logic
     }
 }

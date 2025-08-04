@@ -11,11 +11,11 @@ public class RefreshToken
 
     [Required]
     [StringLength(100)]
-    public string UserId { get; set; }
+    public required string UserId { get; set; }
 
     [Required]
     [StringLength(512)]
-    public string Token { get; set; }
+    public required string Token { get; set; }
 
     [Required]
     public DateTime Expires { get; set; }

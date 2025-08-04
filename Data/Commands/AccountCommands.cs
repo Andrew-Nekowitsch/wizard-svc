@@ -23,19 +23,26 @@ public class AccountCommands(AppDbContext context) : IAccountCommands
             PasswordHash = passwordHashed
         };
 
+        var errors = new List<ErrorMessage>();
+
         if (await context.Accounts.AnyAsync(u => u.Email == email))
         {
-            return new MessageWrapper<Account>("Email already exists.", false, null);
+            errors.Add(new ErrorMessage("Email already exists.", "email"));
         }
         
         var normalizedUsername = username.ToLower().Trim();
         if (await context.Accounts.AnyAsync(u => u.UserName.ToLower().Trim() == normalizedUsername))
         {
-            return new MessageWrapper<Account>("Username already exists.", false, null);
+            errors.Add(new ErrorMessage("Username already exists.", "username"));
+        }
+
+        if (errors.Count != 0)
+        {
+            return new MessageWrapper<Account>("Validation failed.", errors, false, null);
         }
 
         await context.Accounts.AddAsync(user);
         await context.SaveChangesAsync();
-        return new MessageWrapper<Account>("User registered successfully.", true, user);
+        return new MessageWrapper<Account>("User registered successfully.", new List<ErrorMessage>(), true, user);
     }
 }

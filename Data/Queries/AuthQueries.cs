@@ -26,6 +26,6 @@ public class AuthQueries(AppDbContext context) : IAuthQueries
         // }
         await Task.Delay(100); // Simulate async operation
 
-        return new MessageWrapper<RefreshToken>("Token retrieved successfully.", true, new RefreshToken { Token = "token" });
+        return new MessageWrapper<RefreshToken>("Token retrieved successfully.", [], true, new RefreshToken { UserId = "userId", Token = "token" });
     }
 }

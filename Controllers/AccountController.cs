@@ -18,7 +18,7 @@ public class AccountController(IAccountService accountService) : ControllerBase
 
         if (!result.Success)
         {
-            return BadRequest(result.Message);
+            return BadRequest(result);
         }
 
         return Ok(result);

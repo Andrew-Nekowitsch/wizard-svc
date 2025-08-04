@@ -1,15 +1,15 @@
 namespace Models;
 
-public class MessageWrapper<T>
+public class MessageWrapper<T>(string message, List<ErrorMessage> error, bool success, T? data)
 {
-    public string Message { get; set; }
-    public bool Success { get; set; }
-    public T? Data { get; set; }
+    public string Message { get; set; } = message;
+    public List<ErrorMessage> Error { get; set; } = error;
+    public bool Success { get; set; } = success;
+    public T? Data { get; set; } = data;
+}
 
-    public MessageWrapper(string message, bool success, T? data)
-    {
-        Message = message;
-        Success = success;
-        Data = data;
-    }
+public class ErrorMessage(string message, string error)
+{
+    public string Message { get; set; } = message;
+    public string Error { get; set; } = error;
 }

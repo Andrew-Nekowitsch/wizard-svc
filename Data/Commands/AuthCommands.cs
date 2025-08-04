@@ -15,7 +15,8 @@ public class AuthCommands(AppDbContext context) : IAuthCommands
 
     public async Task<MessageWrapper<string>> SaveTokenAsync(string id, string refreshToken, DateTime expires)
     {
-        return new MessageWrapper<string>("Method not implemented.", false, null);
+        await Task.CompletedTask; // Simulating async operation, replace with actual implementation
+        return new MessageWrapper<string>("Method not implemented.", [], false, null);
         // try
         // {
         //     // context.RefreshTokens.Add(new RefreshToken

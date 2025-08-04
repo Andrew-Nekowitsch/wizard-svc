@@ -21,8 +21,6 @@ public static class ProgramExtensions
 
     public static WebApplicationBuilder AddWizardIdlerData(this WebApplicationBuilder builder)
     {
-        builder.Services.AddScoped<IPlayerCommands, PlayerCommands>();
-        builder.Services.AddScoped<IPlayerQueries, PlayerQueries>();
         builder.Services.AddScoped<IAccountQueries, AccountQueries>();
         builder.Services.AddScoped<IAccountCommands, AccountCommands>();
         builder.Services.AddScoped<IAuthQueries, AuthQueries>();

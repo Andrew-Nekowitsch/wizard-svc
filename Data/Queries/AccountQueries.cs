@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Models;
-using Utilities;
 
 namespace Data.Queries;
 
@@ -19,10 +18,10 @@ public class AccountQueries(AppDbContext context) : IAccountQueries
         var user = await context.Accounts.FirstOrDefaultAsync(u => u.Email == login || u.UserName == login);
         if (user == null)
         {
-            return new MessageWrapper<Account>("User not found.", false, null);
+            return new MessageWrapper<Account>("User not found.", [new ErrorMessage("login", "User not found.")], false, null);
         }
 
-        return new MessageWrapper<Account>("User Found.", true, user);
+        return new MessageWrapper<Account>("User Found.", [], true, user);
     }
 
     public async Task<MessageWrapper<Account>> GetAccountById(string userId)
@@ -30,9 +29,9 @@ public class AccountQueries(AppDbContext context) : IAccountQueries
         var user = await context.Accounts.FirstOrDefaultAsync(u => u.Id.ToString() == userId);
         if (user == null)
         {
-            return new MessageWrapper<Account>("User not found.", false, null);
+            return new MessageWrapper<Account>("User not found.", [new ErrorMessage("id", "User id not found.")], false, null);
         }
 
-        return new MessageWrapper<Account>("User found.", true, user);
+        return new MessageWrapper<Account>("User found.", [], true, user);
     }
 }

@@ -24,16 +24,16 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
 
             if (accountWrapper == null || accountWrapper.Data == null || !accountWrapper.Success)
             {
-                return new MessageWrapper<GetAccountResponse>(accountWrapper?.Message ?? "Unknown error occurred.", false, null);
+                return new MessageWrapper<GetAccountResponse>(accountWrapper?.Message ?? "Unknown error occurred.", accountWrapper?.Error ?? [], false, null);
             }
 
             var safeAccount = accountWrapper.Data?.ToGetAccountResponse();
 
-            return new MessageWrapper<GetAccountResponse>("Registration successful.", true, safeAccount);
+            return new MessageWrapper<GetAccountResponse>("Registration successful.", [], true, safeAccount);
         }
         catch (Exception ex)
         {
-            return new MessageWrapper<GetAccountResponse>(ex.Message, false, null);
+            return new MessageWrapper<GetAccountResponse>(ex.Message, [new ErrorMessage("exception", ex.Message)], false, null);
         }
     }
 
@@ -46,13 +46,13 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
 
             if (!msg.Success)
             {
-                return new MessageWrapper<GetAccountResponse>(msg.Message, false, null);
+                return new MessageWrapper<GetAccountResponse>(msg.Message, [new ErrorMessage("login", msg.Message)], false, null);
             }
 
             var user = msg.Data;
             if (user != null && !AccountUtilities.VerifyPassword(passwordRaw, user.PasswordHash))
             {
-                return new MessageWrapper<GetAccountResponse>("Invalid password.", false, null);
+                return new MessageWrapper<GetAccountResponse>("Invalid password.", [new ErrorMessage("password", "Invalid password.")], false, null);
             }
 
             GetAccountResponse? safeUser = null;
@@ -65,11 +65,11 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
                 };
             }
 
-            return new MessageWrapper<GetAccountResponse>("Sign-in successful.", true, safeUser);
+            return new MessageWrapper<GetAccountResponse>("Sign-in successful.", [], true, safeUser);
         }
         catch (Exception ex)
         {
-            return new MessageWrapper<GetAccountResponse>(ex.Message, false, null);
+            return new MessageWrapper<GetAccountResponse>(ex.Message, [new ErrorMessage("exception", ex.Message)], false, null);
         }
     }
 
@@ -81,7 +81,7 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
 
             if (!msg.Success || msg.Data == null)
             {
-                return new MessageWrapper<GetAccountResponse>("User not found.", false, null);
+                return new MessageWrapper<GetAccountResponse>("User not found.", [new ErrorMessage("id", "User id not found.")], false, null);
             }
 
             var user = msg.Data;
@@ -91,11 +91,11 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
                 Username = user.UserName
             };
 
-            return new MessageWrapper<GetAccountResponse>("User retrieved successfully.", true, safeUser);
+            return new MessageWrapper<GetAccountResponse>("User retrieved successfully.", [], true, safeUser);
         }
         catch (Exception ex)
         {
-            return new MessageWrapper<GetAccountResponse>(ex.Message, false, null);
+            return new MessageWrapper<GetAccountResponse>(ex.Message, [new ErrorMessage("exception", ex.Message)], false, null);
         }
     }
 }
