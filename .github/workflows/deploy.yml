@@ -10,6 +10,13 @@ jobs:
     runs-on: self-hosted
     environment: production
 
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      UI_URL: ${{ secrets.UI_URL }}
+      DB_SERVER: ${{ secrets.DB_SERVER }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_Password: ${{ secrets.DB_Password }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,4 +30,4 @@ jobs:
           docker rm wizard-svc || true
 
       - name: Run new container
-        run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 wizard-svc
+        run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 -e JWT_SECRET=$JWT_SECRET -e DB_SERVER=$DB_SERVER -e DB_USER=$DB_USER -e DB_Password=$DB_Password wizard-svc
