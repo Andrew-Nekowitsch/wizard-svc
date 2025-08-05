@@ -30,7 +30,7 @@ else
     app.UseHttpsRedirection();
 }
 
-app.UseCors("AllowFrontend");
+// app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
