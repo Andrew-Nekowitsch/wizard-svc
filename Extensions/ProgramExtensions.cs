@@ -81,10 +81,11 @@ public static class ProgramExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
         });
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend",
-                policy => policy.WithOrigins(builder.Configuration["UI_URL"] ?? "http://localhost:5174")
+                policy => policy.WithOrigins([builder.Configuration["UI_URL"] ?? "http://localhost:5174", "192.168.1.87:5174"])
                                 .AllowAnyHeader()
                                 .AllowAnyMethod());
         });
