@@ -1,6 +1,10 @@
-@wizard-svc_HostAddress = http://localhost:5175
+@baseUrl = 192.168.1.3:5175
 
-GET {{wizard-svc_HostAddress}}/weatherforecast/
+POST {{baseUrl}}/auth/login
 Accept: application/json
 
+{
+    "login":"asdf",
+    "password":"asdfasdf"
+}
 ###
