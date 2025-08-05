@@ -7,6 +7,7 @@ namespace Data.Commands;
 public interface IAuthCommands
 {
     Task<MessageWrapper<string>> SaveTokenAsync(string id, string refreshToken, DateTime expires);
+    Task RevokeTokenAsync(string token);
 }
 
 public class AuthCommands(AppDbContext context) : IAuthCommands
@@ -30,5 +31,17 @@ public class AuthCommands(AppDbContext context) : IAuthCommands
         // {
         //     return new MessageWrapper<void>(ex.Message, false, null);
         // }
+    }
+
+    public async Task RevokeTokenAsync(string token)
+    {
+        var storedToken = await context.RefreshTokens
+                    .FirstOrDefaultAsync(t => t.Token == token);
+
+        if (storedToken == null) return;
+
+        context.RefreshTokens.Remove(storedToken);
+
+        await context.SaveChangesAsync();
     }
 }

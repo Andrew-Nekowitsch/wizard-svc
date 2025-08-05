@@ -7,7 +7,7 @@ namespace Models;
 public class RefreshToken
 {
     [Key]
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     [Required]
     [StringLength(100)]
@@ -20,5 +20,11 @@ public class RefreshToken
     [Required]
     public DateTime Expires { get; set; }
 
+    [Required]
+    public DateTime Created { get; set; } = DateTime.UtcNow;
+
     public DateTime? Revoked { get; set; }
+    
+    public bool IsActive => Revoked == null && !IsExpired;
+    public bool IsExpired => DateTime.UtcNow >= Expires;
 }

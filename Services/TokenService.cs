@@ -7,6 +7,7 @@ using Data.Queries;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Models;
+using Models.Responses;
 
 namespace Services;
 
@@ -14,8 +15,10 @@ public interface ITokenService
 {
     string GenerateAccessToken(string userId, string username);
     string GenerateRefreshToken();
-    Task SaveAsync(string userId, string refreshToken, DateTime expires);
+    Task<MessageWrapper<string>> SaveAsync(string userId, string refreshToken, DateTime expires);
     Task<MessageWrapper<RefreshToken>> GetAsync(string token);
+    Task<MessageWrapper<string>> RevokeAsync(string token);
+    Task<TokenResponse> GenerateTokens(string userId, string username, double expiresInDays);
 }
 
 public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authCommands, IAuthQueries authQueries) : ITokenService
@@ -26,28 +29,23 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
     {
         try
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_settings.Secret);
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+            var token = new JwtSecurityToken(
+                issuer: _settings.Issuer,
+                audience: _settings.Audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpirationMinutes),
+                signingCredentials: creds
+            );
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpirationMinutes),
-                Issuer = _settings.Issuer,
-                Audience = _settings.Audience,
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
         catch (Exception)
         {
@@ -68,16 +66,59 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
         }
     }
 
-    public Task SaveAsync(string userId, string refreshToken, DateTime expires)
+    public async Task<MessageWrapper<string>> SaveAsync(string userId, string refreshToken, DateTime expires)
     {
-        authCommands.SaveTokenAsync(userId, refreshToken, expires);
-        return Task.CompletedTask;
+        try
+        {
+            await authCommands.SaveTokenAsync(userId, refreshToken, expires);
+            return new MessageWrapper<string>("Refresh token saved successfully.", [], true, null);
+        }
+        catch (Exception ex)
+        {
+            return new MessageWrapper<string>("Failed to save refresh token.", [new ErrorMessage("token", ex.Message)], false, null);
+        }
     }
 
     public async Task<MessageWrapper<RefreshToken>> GetAsync(string token)
     {
-        // This method should retrieve the refresh token from the database
-        // For now, we return a placeholder message
-        return await authQueries.GetTokenAsync(new RefreshToken { UserId = "userId", Token = token }); // Replace with actual userId retrieval logic
+        try
+        {
+            var result = await authQueries.GetTokenAsync(token);
+            if (!result.Success)
+            {
+                return new MessageWrapper<RefreshToken>("Failed to retrieve token.", result.Error, false, null);
+            }
+
+            return new MessageWrapper<RefreshToken>("Token retrieved successfully.", [], true, result.Data);
+        }
+        catch (Exception ex)
+        {
+            return new MessageWrapper<RefreshToken>("Exception thrown while retrieving token.", [new ErrorMessage("token", ex.Message)], false, null);
+        }
+    }
+
+    public async Task<MessageWrapper<string>> RevokeAsync(string token)
+    {
+        try
+        {
+            await authCommands.RevokeTokenAsync(token);
+            return new MessageWrapper<string>("Token revoked successfully.", [], true, null);
+        }
+        catch (Exception ex)
+        {
+            return new MessageWrapper<string>("Exception thrown while revoking token.", [new ErrorMessage("token", ex.Message)], false, null);
+        }
+    }
+
+    public async Task<TokenResponse> GenerateTokens(string userId, string username, double expiresInDays)
+    {
+        var accessToken = GenerateAccessToken(userId, username);
+        var refreshToken = GenerateRefreshToken();
+        await SaveAsync(userId, refreshToken, DateTime.UtcNow.AddDays(expiresInDays));
+        return new TokenResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        };
     }
 }

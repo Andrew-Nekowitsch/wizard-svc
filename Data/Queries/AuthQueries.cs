@@ -1,31 +1,32 @@
 using Microsoft.EntityFrameworkCore;
 using Models;
-using Utilities;
 
 namespace Data.Queries;
 
 public interface IAuthQueries
 {
-    Task<MessageWrapper<RefreshToken>> GetTokenAsync(RefreshToken refreshToken);
+    Task<MessageWrapper<RefreshToken>> GetTokenAsync(string token);
 }
 
 public class AuthQueries(AppDbContext context) : IAuthQueries
 {
     private readonly AppDbContext context = context;
 
-    public async Task<MessageWrapper<RefreshToken>> GetTokenAsync(RefreshToken refreshToken)
+    public async Task<MessageWrapper<RefreshToken>> GetTokenAsync(string token)
     {
-        // var token = await context.RefreshTokens
-        //     .Where(t => t.UserId == refreshToken.UserId)
-        //     .Select(t => t.Token)
-        //     .FirstOrDefaultAsync();
+        if (string.IsNullOrEmpty(token))
+        {
+            return new MessageWrapper<RefreshToken>("Token cannot be null or empty.", [new ErrorMessage("token", "Token cannot be null or empty.")], false, null);
+        }
 
-        // if (token == null)
-        // {
-        //     return new MessageWrapper<string>("Token not found.", false, null);
-        // }
-        await Task.Delay(100); // Simulate async operation
+        var refreshToken = await context.RefreshTokens
+            .FirstOrDefaultAsync(t => t.Token == token);
 
-        return new MessageWrapper<RefreshToken>("Token retrieved successfully.", [], true, new RefreshToken { UserId = "userId", Token = "token" });
+        if (refreshToken == null)
+        {
+            return new MessageWrapper<RefreshToken>("Token not found.", [new ErrorMessage("token", "Token not found.")], false, null);
+        }
+
+        return new MessageWrapper<RefreshToken>("Token retrieved successfully.", [], true, refreshToken);
     }
 }

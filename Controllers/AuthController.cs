@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Services;
 using Models.Requests;
-using Microsoft.AspNetCore.Authentication;
 using Models;
 using Microsoft.Extensions.Options;
 using Models.Responses;
@@ -14,72 +13,59 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] SignInRequest request)
+    [HttpPost("register")]
+    public async Task<ActionResult<MessageWrapper<LoginResponse>>> Register([FromBody] SignUpRequest request)
     {
-        var userWrapper = await accountService.ValidateUserAsync(request.Login, request.Password);
-        if (userWrapper == null || !userWrapper.Success || userWrapper.Data == null) return Unauthorized();
+        var accountResponseWrapper = await accountService.CreateUserAsync(request);
 
-        var user = userWrapper.Data;
-
-        var accessToken = tokenService.GenerateAccessToken(user.Id.ToString(), user.Username);
-        var refreshToken = tokenService.GenerateRefreshToken();
-        await tokenService.SaveAsync(user.Id.ToString(), refreshToken, DateTime.UtcNow.AddDays(7));
-
-        return Ok(new LoginResponse
+        if (accountResponseWrapper == null || accountResponseWrapper.Validate().ContainsErrors())
         {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            UserWrapper = userWrapper
-        });
+            return BadRequest(accountResponseWrapper);
+        }
+        
+        var tokens = await tokenService.GenerateTokens(accountResponseWrapper.Data!.Id.ToString(), accountResponseWrapper.Data.Username, _jwtSettings.AccessTokenExpirationMinutes);
+
+        return Ok(new MessageWrapper<LoginResponse>("Registration successful", [], true, new LoginResponse
+        {
+            Tokens = tokens,
+            UserWrapper = accountResponseWrapper
+        }));
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<MessageWrapper<LoginResponse>>> Login([FromBody] SignInRequest request)
+    {
+        var accountResponseWrapper = await accountService.ValidateUserAsync(request);
+        if (accountResponseWrapper == null || accountResponseWrapper.Validate().ContainsErrors())
+        {
+            return Unauthorized(new MessageWrapper<LoginResponse>("Invalid login or password.", [new ErrorMessage("login", "Invalid login or password.")], false, null));
+        }
+
+        var tokens = await tokenService.GenerateTokens(accountResponseWrapper.Data!.Id.ToString(), accountResponseWrapper.Data.Username, _jwtSettings.AccessTokenExpirationMinutes);
+
+        return Ok(new MessageWrapper<LoginResponse>("Login successful", [], true, new LoginResponse
+        {
+            Tokens = tokens,
+            UserWrapper = accountResponseWrapper
+        }));
     }
 
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync("MyCookieAuth");
-        return Ok(new { message = "Logged out" });
+    var refreshToken = Request.Cookies["refreshToken"];
+    if (refreshToken != null)
+    {
+        await tokenService.RevokeAsync(refreshToken);
     }
 
-    [HttpGet("me")]
-    public IActionResult GetCurrentUser()
-    {
-        var username = User?.Identity?.Name;
-        return Ok(new { username });
+    return Ok(new { message = "Logged out" });
     }
 
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(RefreshRequest request)
     {
-        var tokenWrapper = await tokenService.GetAsync(request.Token);
-        if (tokenWrapper.Data == null || !tokenWrapper.Success || tokenWrapper.Data.Expires < DateTime.UtcNow || tokenWrapper.Data.Revoked != null)
-        {
-            return Unauthorized();
-        }
-
-        var userWrapper = await accountService.GetUserByIdAsync(tokenWrapper.Data.UserId);
-        if (userWrapper.Data == null || !userWrapper.Success)
-        {
-            return Unauthorized();
-        }
-
-        var token = tokenWrapper.Data;
-        var user = userWrapper.Data;
-        var newAccessToken = tokenService.GenerateAccessToken(user.Id.ToString(), user.Username);
-        var newRefreshToken = tokenService.GenerateRefreshToken();
-
-        token.Revoked = DateTime.UtcNow;
-        await tokenService.SaveAsync(user.Id.ToString(), newRefreshToken, DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays));
-
-        if (newAccessToken == null || newRefreshToken == null)
-        {
-            return StatusCode(500, "Failed to generate new tokens.");
-        }
-
-        return Ok(new RefreshResponse
-        {
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken
-        });
+        await Task.CompletedTask;
+        return Ok();
     }
 }

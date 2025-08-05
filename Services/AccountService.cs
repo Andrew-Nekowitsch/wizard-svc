@@ -2,25 +2,27 @@
 using Data.Commands;
 using Data.Queries;
 using Models;
+using Models.Requests;
+using Models.Responses;
 using Utilities;
 
 namespace Services;
 
 public interface IAccountService
 {
-    Task<MessageWrapper<GetAccountResponse>> CreateUserAsync(string email, string username, string password);
-    Task<MessageWrapper<GetAccountResponse>> ValidateUserAsync(string login, string password);
+    Task<MessageWrapper<GetAccountResponse>> CreateUserAsync(SignUpRequest signUpRequest);
+    Task<MessageWrapper<GetAccountResponse>> ValidateUserAsync(SignInRequest signInRequest);
     Task<MessageWrapper<GetAccountResponse>> GetUserByIdAsync(string userId);
 }
 
 public class AccountService(IAccountCommands accountCommands, IAccountQueries accountQueries) : IAccountService
 {
-    public async Task<MessageWrapper<GetAccountResponse>> CreateUserAsync(string email, string username, string passwordRaw)
+    public async Task<MessageWrapper<GetAccountResponse>> CreateUserAsync(SignUpRequest signUpRequest)
     {
         try
         {
-            var passwordHashed = AccountUtilities.HashPassword(passwordRaw);
-            var accountWrapper = await accountCommands.Register(email, username, passwordHashed);
+            var passwordHashed = AuthUtilities.HashPassword(signUpRequest);
+            var accountWrapper = await accountCommands.Register(signUpRequest.Email, signUpRequest.Username, passwordHashed);
 
             if (accountWrapper == null || accountWrapper.Data == null || !accountWrapper.Success)
             {
@@ -37,34 +39,25 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
         }
     }
 
-    public async Task<MessageWrapper<GetAccountResponse>> ValidateUserAsync(string login, string passwordRaw)
+    public async Task<MessageWrapper<GetAccountResponse>> ValidateUserAsync(SignInRequest signInRequest)
     {
         try
         {
-            var lowerLogin = login.ToLower().Trim();
+            var lowerLogin = signInRequest.Login.ToLower().Trim();
             var msg = await accountQueries.GetAccount(lowerLogin);
 
-            if (!msg.Success)
+            if (!msg.Success || msg.Data == null)
             {
-                return new MessageWrapper<GetAccountResponse>(msg.Message, [new ErrorMessage("login", msg.Message)], false, null);
+                return new MessageWrapper<GetAccountResponse>("Invalid login or password.", [new ErrorMessage("login", "Invalid login or password.")], false, null);
             }
 
             var user = msg.Data;
-            if (user != null && !AccountUtilities.VerifyPassword(passwordRaw, user.PasswordHash))
+            if (!AuthUtilities.VerifyPassword(signInRequest, user.PasswordHash))
             {
                 return new MessageWrapper<GetAccountResponse>("Invalid password.", [new ErrorMessage("password", "Invalid password.")], false, null);
             }
 
-            GetAccountResponse? safeUser = null;
-            if (user != null)
-            {
-                safeUser = new GetAccountResponse
-                {
-                    Id = user.Id,
-                    Username = user.UserName
-                };
-            }
-
+            var safeUser = user.ToGetAccountResponse();
             return new MessageWrapper<GetAccountResponse>("Sign-in successful.", [], true, safeUser);
         }
         catch (Exception ex)

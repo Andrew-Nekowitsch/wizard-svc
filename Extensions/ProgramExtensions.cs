@@ -52,7 +52,7 @@ public static class ProgramExtensions
         if (jwtSettings == null || string.IsNullOrEmpty(secret))
             throw new InvalidOperationException("JWT settings or secret is not configured.");
         jwtSettings.Secret = secret;
-            
+
         builder.Services.Configure<JwtSettings>(options =>
         {
             options.Issuer = jwtSettings.Issuer;

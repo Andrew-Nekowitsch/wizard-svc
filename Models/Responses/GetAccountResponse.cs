@@ -1,5 +1,4 @@
-
-namespace Models;
+namespace Models.Responses;
 
 public record GetAccountResponse
 {
