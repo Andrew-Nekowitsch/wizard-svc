@@ -9,7 +9,7 @@ namespace Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController(IAccountService accountService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings) : ControllerBase
+public class AuthController(IAccountService accountService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IConfiguration configuration) : ControllerBase
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
@@ -66,6 +66,6 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
     public async Task<IActionResult> Refresh(RefreshRequest request)
     {
         await Task.CompletedTask;
-        return Ok();
+        return Ok(configuration["UI_URL"]);
     }
 }
