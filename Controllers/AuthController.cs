@@ -4,6 +4,7 @@ using Models.Requests;
 using Models;
 using Microsoft.Extensions.Options;
 using Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Controllers;
 
@@ -66,6 +67,14 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
     public async Task<IActionResult> Refresh(RefreshRequest request)
     {
         await Task.CompletedTask;
-        return Ok(configuration["UI_URL"]);
+        return Ok();
+    }
+
+    [Authorize]
+    [HttpPost("authenticated")]
+    public async Task<IActionResult> Authenticated(RefreshRequest request)
+    {
+        await Task.CompletedTask;
+        return Ok("Authenticated");
     }
 }

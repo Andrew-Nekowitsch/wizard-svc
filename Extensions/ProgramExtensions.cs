@@ -72,12 +72,12 @@ public static class ProgramExtensions
             var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
                 ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
                 ValidIssuer = jwtSettings.Issuer,
+                ValidateAudience = true,
                 ValidAudience = jwtSettings.Audience,
+                ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key)
             };
         });
