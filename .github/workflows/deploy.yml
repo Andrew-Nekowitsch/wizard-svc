@@ -10,10 +10,6 @@ jobs:
     runs-on: self-hosted
     environment: production
 
-    env:
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
-      DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,4 +23,4 @@ jobs:
           docker rm wizard-svc || true
 
       - name: Run new container
-        run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 -e JWT_SECRET=$JWT_SECRET -e DATABASE_CONNECTION_STRING=$DATABASE_CONNECTION_STRING wizard-svc
+        run: docker run -d --restart unless-stopped --name wizard-svc -p 5175:5175 wizard-svc
