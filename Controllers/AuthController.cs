@@ -68,4 +68,11 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
         await Task.CompletedTask;
         return Ok(configuration["UI_URL"]);
     }
+
+    [HttpPost("authenticated")]
+    public async Task<IActionResult> Authenticated(RefreshRequest request)
+    {
+        await Task.CompletedTask;
+        return Ok(configuration["UI_URL"]);
+    }
 }
