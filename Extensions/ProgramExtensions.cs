@@ -82,13 +82,13 @@ public static class ProgramExtensions
             };
         });
 
-        // builder.Services.AddCors(options =>
-        // {
-        //     options.AddPolicy("AllowFrontend",
-        //         policy => policy.WithOrigins([builder.Configuration["UI_URL"] ?? "http://localhost:5174", "http://192.168.1.87:5174/"])
-        //                         .AllowAnyHeader()
-        //                         .AllowAnyMethod());
-        // });
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontend",
+                policy => policy.WithOrigins([builder.Configuration["UI_URL"] ?? "http://localhost:5174", "http://192.168.1.87:5174/"])
+                                .AllowAnyHeader()
+                                .AllowAnyMethod());
+        });
         return builder;
     }
 }

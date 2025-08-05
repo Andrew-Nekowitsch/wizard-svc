@@ -15,22 +15,24 @@ builder.AddWizardIdlerAuth();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.MapOpenApi();
+app.UseSwagger();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
         options.RoutePrefix = string.Empty;
     });
+
 }
 else
 {
     app.UseHttpsRedirection();
 }
 
-// app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");
 app.MapControllers();
 
 app.Run();
