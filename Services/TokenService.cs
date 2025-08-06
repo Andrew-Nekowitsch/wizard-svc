@@ -35,7 +35,8 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Exp, DateTime.UtcNow.AddMinutes(_settings.AccessTokenExpirationMinutes).ToString())
             };
             var token = new JwtSecurityToken(
                 issuer: _settings.Issuer,
