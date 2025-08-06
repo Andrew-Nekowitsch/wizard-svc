@@ -2,28 +2,45 @@ using Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// builder.Configuration
-//     .SetBasePath(Directory.GetCurrentDirectory())
-//     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-//     .AddEnvironmentVariables();
-
-builder.Services.AddOpenApi();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
 
 builder.AddWizardIdlerServices();
 builder.AddWizardIdlerData();
 builder.AddWizardIdlerAuth();
 
+string frontEndOrigin = "http://localhost:5174";
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddOpenApi();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new() { Title = "Wizard Idler API", Version = "v1" });
+    });
+}
+else
+{
+    if (!string.IsNullOrWhiteSpace(builder.Configuration["UI_URL"]))
+        frontEndOrigin = builder.Configuration["UI_URL"]!;
+}
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy => policy.WithOrigins(frontEndOrigin)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
+});
+
+
 var app = builder.Build();
 
-app.MapOpenApi();
-app.UseSwagger();
 
 if (app.Environment.IsDevelopment())
 {
+    app.MapOpenApi();
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
@@ -32,6 +49,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

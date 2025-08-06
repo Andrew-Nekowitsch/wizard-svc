@@ -14,6 +14,8 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
+    private bool useSecure = false;
+
     [HttpPost("register")]
     public async Task<ActionResult<MessageWrapper<LoginResponse>>> Register([FromBody] SignUpRequest request)
     {
@@ -24,30 +26,52 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
             return BadRequest(accountResponseWrapper);
         }
 
-        var tokens = await tokenService.GenerateTokens(accountResponseWrapper.Data!.Id.ToString(), accountResponseWrapper.Data.Username, _jwtSettings.AccessTokenExpirationMinutes);
-
-        return Ok(new MessageWrapper<LoginResponse>("Registration successful", [], true, new LoginResponse
-        {
-            Tokens = tokens,
-            UserWrapper = accountResponseWrapper
-        }));
+        return Ok(new MessageWrapper<string>("Registration successful", [], true, string.Empty));
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<MessageWrapper<LoginResponse>>> Login([FromBody] SignInRequest request)
     {
-        var accountResponseWrapper = await accountService.ValidateUserAsync(request);
-        if (accountResponseWrapper == null || accountResponseWrapper.Validate().ContainsErrors())
+        var accountMsg = await accountService.ValidateUserAsync(request);
+        if (accountMsg == null || accountMsg.Validate().ContainsErrors())
         {
             return Unauthorized(new MessageWrapper<LoginResponse>("Invalid login or password.", [new ErrorMessage("login", "Invalid login or password.")], false, null));
         }
 
-        var tokens = await tokenService.GenerateTokens(accountResponseWrapper.Data!.Id.ToString(), accountResponseWrapper.Data.Username, _jwtSettings.AccessTokenExpirationMinutes);
+        var accessToken = tokenService.GenerateAccessToken(accountMsg.Data!.Id.ToString(), request.Login);
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            return Unauthorized(new MessageWrapper<LoginResponse>("Failed to generate access token.", [new ErrorMessage("accessToken", "Failed to generate access token.")], false, null));
+        }
+
+        var newRefreshToken = tokenService.GenerateRefreshToken();
+        if (string.IsNullOrEmpty(newRefreshToken))
+        {
+            return Unauthorized(new MessageWrapper<LoginResponse>("Failed to generate refresh token.", [new ErrorMessage("refreshToken", "Failed to generate refresh token.")], false, null));
+        }
+        
+        var savedRefreshToken = new RefreshToken()
+        {
+            UserId = accountMsg.Data.Id.ToString(),
+            Token = newRefreshToken,
+            Created = DateTime.UtcNow,
+            Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
+        };
+
+        await tokenService.SaveAsync(savedRefreshToken);
+
+        Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
+        {
+            HttpOnly = true,                    // 🛡️ Prevents JS access
+            Secure = useSecure,                     // 🔒 Only sent over HTTPS (true in production)
+            SameSite = SameSiteMode.Strict,     // 🚧 Prevents cross-site CSRF
+            Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
+        });
 
         return Ok(new MessageWrapper<LoginResponse>("Login successful", [], true, new LoginResponse
         {
-            Tokens = tokens,
-            UserWrapper = accountResponseWrapper
+            AccessToken = accessToken,
+            UserWrapper = accountMsg
         }));
     }
 
@@ -60,20 +84,62 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
             await tokenService.RevokeAsync(refreshToken);
         }
 
+        Response.Cookies.Append("refreshToken", "", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = useSecure,
+            SameSite = SameSiteMode.Strict,
+            Expires = DateTime.UtcNow.AddDays(-1)
+        });
+
         return Ok(new { message = "Logged out" });
     }
 
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh(RefreshRequest request)
+    public async Task<IActionResult> Refresh()
     {
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized();
 
-        await tokenService.RevokeAsync(request.Token);
-        await Task.CompletedTask;
-        return Ok();
+        var tokenMsg = await tokenService.GetAsync(refreshToken);
+        if (tokenMsg == null || tokenMsg.Validate().ContainsErrors() || tokenMsg.Data!.Revoked != null || tokenMsg.Data!.IsExpired)
+            return Unauthorized();
+
+        var refreshTokenDb = tokenMsg.Data!;
+        var userMsg = await accountService.GetUserByIdAsync(tokenMsg.Data!.UserId);
+        if (userMsg == null || userMsg.Validate().ContainsErrors())
+            return Unauthorized();
+
+        var user = userMsg.Data!;
+        refreshTokenDb.Revoked = DateTime.UtcNow;
+        var newAccessToken = tokenService.GenerateAccessToken(user.Id.ToString(), user.Username);
+        var newRefreshToken = tokenService.GenerateRefreshToken();
+
+        var savedRefreshToken = new RefreshToken()
+        {
+            UserId = user.Id.ToString(),
+            Token = newRefreshToken,
+            Created = DateTime.UtcNow,
+            Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
+        };
+
+        await tokenService.SaveAsync(savedRefreshToken);
+
+        // Set new refresh cookie
+        Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = useSecure, // false in dev if you're using HTTP
+            SameSite = SameSiteMode.Strict,
+            Expires = savedRefreshToken.Expires
+        });
+
+        return Ok(new { accessToken = newAccessToken });
     }
 
     [Authorize]
-    [HttpPost("authenticated")]
+    [HttpGet("authenticated")]
     public async Task<IActionResult> Authenticated()
     {
         await Task.CompletedTask;
