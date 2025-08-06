@@ -14,7 +14,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-    private bool useSecure = false;
+    private bool useSecure = true;
 
     [HttpPost("register")]
     public async Task<ActionResult<MessageWrapper<LoginResponse>>> Register([FromBody] SignUpRequest request)
