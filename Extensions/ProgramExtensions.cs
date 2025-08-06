@@ -82,10 +82,12 @@ public static class ProgramExtensions
             };
         });
 
+        var corsOrigins = string.IsNullOrWhiteSpace(builder.Configuration["UI_URL"]) ? "http://localhost:5174" : builder.Configuration["UI_URL"];
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend",
-                policy => policy.WithOrigins([builder.Configuration["UI_URL"] ?? "http://localhost:5174", "http://192.168.1.3:5174/"])
+                policy => policy.WithOrigins([corsOrigins!, "http://192.168.1.3:5174/"])
                                 .AllowAnyHeader()
                                 .AllowAnyMethod());
         });
