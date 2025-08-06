@@ -4,12 +4,13 @@ using Models.Requests;
 using Models;
 using Microsoft.Extensions.Options;
 using Models.Responses;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class AuthController(IAccountService accountService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings, IConfiguration configuration) : ControllerBase
+public class AuthController(IAccountService accountService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings) : ControllerBase
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
@@ -22,7 +23,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
         {
             return BadRequest(accountResponseWrapper);
         }
-        
+
         var tokens = await tokenService.GenerateTokens(accountResponseWrapper.Data!.Id.ToString(), accountResponseWrapper.Data.Username, _jwtSettings.AccessTokenExpirationMinutes);
 
         return Ok(new MessageWrapper<LoginResponse>("Registration successful", [], true, new LoginResponse
@@ -53,26 +54,29 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
-    var refreshToken = Request.Cookies["refreshToken"];
-    if (refreshToken != null)
-    {
-        await tokenService.RevokeAsync(refreshToken);
-    }
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (refreshToken != null)
+        {
+            await tokenService.RevokeAsync(refreshToken);
+        }
 
-    return Ok(new { message = "Logged out" });
+        return Ok(new { message = "Logged out" });
     }
 
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(RefreshRequest request)
     {
+
+        await tokenService.RevokeAsync(request.Token);
         await Task.CompletedTask;
-        return Ok(configuration["UI_URL"]);
+        return Ok();
     }
 
+    [Authorize]
     [HttpPost("authenticated")]
-    public async Task<IActionResult> Authenticated(RefreshRequest request)
+    public async Task<IActionResult> Authenticated()
     {
         await Task.CompletedTask;
-        return Ok(configuration["UI_URL"]);
+        return Ok("Authenticated");
     }
 }
