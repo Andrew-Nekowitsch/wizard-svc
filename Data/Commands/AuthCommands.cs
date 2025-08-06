@@ -6,7 +6,7 @@ namespace Data.Commands;
 
 public interface IAuthCommands
 {
-    Task<MessageWrapper<string>> SaveTokenAsync(string id, string refreshToken, DateTime expires);
+    Task<MessageWrapper<string>> SaveTokenAsync(RefreshToken refreshToken);
     Task RevokeTokenAsync(string token);
 }
 
@@ -14,23 +14,19 @@ public class AuthCommands(AppDbContext context) : IAuthCommands
 {
     private readonly AppDbContext context = context;
 
-    public async Task<MessageWrapper<string>> SaveTokenAsync(string id, string refreshToken, DateTime expires)
+    public async Task<MessageWrapper<string>> SaveTokenAsync(RefreshToken refreshToken)
     {
-        await Task.CompletedTask; // Simulating async operation, replace with actual implementation
-        return new MessageWrapper<string>("Method not implemented.", [], false, null);
-        // try
-        // {
-        //     // context.RefreshTokens.Add(new RefreshToken
-        //     // {
-        //     //     UserId = id,
-        //     //     Token = refreshToken,
-        //     //     Expires = expires
-        //     // });
-        // }
-        // catch (Exception ex)
-        // {
-        //     return new MessageWrapper<void>(ex.Message, false, null);
-        // }
+        try
+        {
+            await context.RefreshTokens.AddAsync(refreshToken);
+            await context.SaveChangesAsync();
+            
+            return new MessageWrapper<string>("Token saved.", [], false, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return new MessageWrapper<string>(ex.Message, [], false, "Failed to save token.");
+        }
     }
 
     public async Task RevokeTokenAsync(string token)

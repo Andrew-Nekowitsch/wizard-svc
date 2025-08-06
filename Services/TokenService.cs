@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using Data.Commands;
 using Data.Queries;
 using Microsoft.Extensions.Options;
@@ -15,10 +16,9 @@ public interface ITokenService
 {
     string GenerateAccessToken(string userId, string username);
     string GenerateRefreshToken();
-    Task<MessageWrapper<string>> SaveAsync(string userId, string refreshToken, DateTime expires);
+    Task<MessageWrapper<string>> SaveAsync(RefreshToken refreshToken);
     Task<MessageWrapper<RefreshToken>> GetAsync(string token);
     Task<MessageWrapper<string>> RevokeAsync(string token);
-    Task<TokenResponse> GenerateTokens(string userId, string username, double expiresInDays);
 }
 
 public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authCommands, IAuthQueries authQueries) : ITokenService
@@ -67,11 +67,11 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
         }
     }
 
-    public async Task<MessageWrapper<string>> SaveAsync(string userId, string refreshToken, DateTime expires)
+    public async Task<MessageWrapper<string>> SaveAsync(RefreshToken refreshToken)
     {
         try
         {
-            await authCommands.SaveTokenAsync(userId, refreshToken, expires);
+            await authCommands.SaveTokenAsync(refreshToken);
             return new MessageWrapper<string>("Refresh token saved successfully.", [], true, null);
         }
         catch (Exception ex)
@@ -109,17 +109,5 @@ public class TokenService(IOptions<JwtSettings> settings, IAuthCommands authComm
         {
             return new MessageWrapper<string>("Exception thrown while revoking token.", [new ErrorMessage("token", ex.Message)], false, null);
         }
-    }
-
-    public async Task<TokenResponse> GenerateTokens(string userId, string username, double expiresInDays)
-    {
-        var accessToken = GenerateAccessToken(userId, username);
-        var refreshToken = GenerateRefreshToken();
-        await SaveAsync(userId, refreshToken, DateTime.UtcNow.AddDays(expiresInDays));
-        return new TokenResponse
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
-        };
     }
 }

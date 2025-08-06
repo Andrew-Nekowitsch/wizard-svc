@@ -13,6 +13,7 @@ public interface IAccountService
     Task<MessageWrapper<GetAccountResponse>> CreateUserAsync(SignUpRequest signUpRequest);
     Task<MessageWrapper<GetAccountResponse>> ValidateUserAsync(SignInRequest signInRequest);
     Task<MessageWrapper<GetAccountResponse>> GetUserByIdAsync(string userId);
+    Task<string> GetUserIdFromUsername(string username);
 }
 
 public class AccountService(IAccountCommands accountCommands, IAccountQueries accountQueries) : IAccountService
@@ -89,6 +90,24 @@ public class AccountService(IAccountCommands accountCommands, IAccountQueries ac
         catch (Exception ex)
         {
             return new MessageWrapper<GetAccountResponse>(ex.Message, [new ErrorMessage("exception", ex.Message)], false, null);
+        }
+    }
+
+    public async Task<string> GetUserIdFromUsername(string username)
+    {
+        try
+        {
+            var msg = await accountQueries.GetAccount(username);
+            if (!msg.Success || msg.Data == null)
+            {
+                return string.Empty;
+            }
+
+            return msg.Data.Id.ToString();
+        }
+        catch (Exception)
+        {
+            return string.Empty;
         }
     }
 }

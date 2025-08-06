@@ -67,7 +67,7 @@ public static class ErrorMessageExtensions
     
     public static bool ContainsErrors(this IEnumerable<ErrorMessage>? errors)
     {
-        if (errors == null)
+        if (errors == null || !errors.Any())
         {
             return false;
         }
