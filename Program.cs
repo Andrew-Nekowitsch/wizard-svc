@@ -2,6 +2,11 @@ using Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddEndpointsApiExplorer();
