@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class AuthController(IAccountService accountService, ITokenService tokenService, IOptions<JwtSettings> jwtSettings) : ControllerBase
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
