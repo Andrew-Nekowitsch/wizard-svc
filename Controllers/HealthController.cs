@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class HealthController(IConfiguration configuration) : ControllerBase
 {
     private readonly IConfiguration _configuration = configuration;
