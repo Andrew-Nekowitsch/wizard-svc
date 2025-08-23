@@ -3,18 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Models.Data;
 
-[Table("Spells")]
+[Table("Spell")]
 public class Spell
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
-
-    [Required]
-    public int PlayerId { get; set; }
-
-    [ForeignKey("PlayerId")]
-    public Player Player { get; set; } = null!;
 
     [Required]
     [MaxLength(50)]
@@ -33,5 +27,5 @@ public class Spell
     public int CooldownSeconds { get; set; }
 
     [Required]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string Icon { get; set; } = string.Empty;
 }
