@@ -1,3 +1,5 @@
+using Models.Util;
+
 namespace Models.Responses;
 
 public record LoginResponse()

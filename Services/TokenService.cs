@@ -2,13 +2,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using Data.Commands;
 using Data.Queries;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Models;
-using Models.Responses;
+using Models.Data;
+using Models.Util;
 
 namespace Services;
 

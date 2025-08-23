@@ -1,3 +1,5 @@
+using Models.Data;
+
 namespace Models.Responses;
 
 public record CreatePlayerResponse
