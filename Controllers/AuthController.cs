@@ -49,7 +49,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
         {
             return Unauthorized(new MessageWrapper<LoginResponse>("Failed to generate refresh token.", [new ErrorMessage("refreshToken", "Failed to generate refresh token.")], false, null));
         }
-        
+
         var savedRefreshToken = new RefreshToken()
         {
             UserId = accountMsg.Data.Id.ToString(),
@@ -62,9 +62,9 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
 
         Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
         {
-            HttpOnly = true,                    // 🛡️ Prevents JS access
-            Secure = useSecure,                     // 🔒 Only sent over HTTPS (true in production)
-            SameSite = SameSiteMode.Strict,     // 🚧 Prevents cross-site CSRF
+            HttpOnly = true,
+            Secure = useSecure,
+            SameSite = SameSiteMode.Strict,
             Expires = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays)
         });
 
@@ -130,7 +130,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
         Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = useSecure, // false in dev if you're using HTTP
+            Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production",
             SameSite = SameSiteMode.Strict,
             Expires = savedRefreshToken.Expires
         });
