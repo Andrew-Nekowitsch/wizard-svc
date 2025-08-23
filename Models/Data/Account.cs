@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Models.Responses;
 
-namespace Models;
+namespace Models.Data;
 
 [Table("Account")]
 public class Account

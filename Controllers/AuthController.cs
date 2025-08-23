@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Services;
 using Models.Requests;
-using Models;
 using Microsoft.Extensions.Options;
 using Models.Responses;
 using Microsoft.AspNetCore.Authorization;
+using Models.Util;
+using Models.Data;
 
 namespace Controllers;
 
@@ -14,7 +15,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
 {
     private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-    private bool useSecure = true;
+    private bool useSecure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
 
     [HttpPost("register")]
     public async Task<ActionResult<MessageWrapper<LoginResponse>>> Register([FromBody] SignUpRequest request)
@@ -130,7 +131,7 @@ public class AuthController(IAccountService accountService, ITokenService tokenS
         Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production",
+            Secure = useSecure,
             SameSite = SameSiteMode.Strict,
             Expires = savedRefreshToken.Expires
         });

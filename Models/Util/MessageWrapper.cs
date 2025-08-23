@@ -1,4 +1,4 @@
-namespace Models;
+namespace Models.Util;
 
 public class MessageWrapper<T>(string message, List<ErrorMessage> error, bool success, T? data)
 {
